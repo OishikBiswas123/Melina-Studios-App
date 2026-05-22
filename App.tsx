@@ -24,12 +24,12 @@ const MELINA_URL =
   (Constants.expoConfig?.extra?.appUrl as string | undefined) ||
   "https://melina.studio";
 
-const LOGIN_URL = `${MELINA_URL.replace(/\/$/, "")}/auth`;
+const APP_ENTRY_URL = `${MELINA_URL.replace(/\/$/, "")}/playground/all`;
 const MELINA_HOSTS = new Set(["melina.studio", "www.melina.studio"]);
 
 function normalizeUrl(url: string) {
   if (url.startsWith("exp://") || url.startsWith("exps://")) {
-    return LOGIN_URL;
+    return APP_ENTRY_URL;
   }
 
   if (url.startsWith("melina://")) {
@@ -79,7 +79,7 @@ function isMainMelinaUrl(url: string) {
 
 export default function App() {
   const webViewRef = useRef<WebViewType>(null);
-  const [targetUrl, setTargetUrl] = useState(LOGIN_URL);
+  const [targetUrl, setTargetUrl] = useState(APP_ENTRY_URL);
   const [canGoBack, setCanGoBack] = useState(false);
   const [loading, setLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
@@ -89,10 +89,12 @@ export default function App() {
   useEffect(() => {
     async function loadInitialUrl() {
       const incomingUrl = await Linking.getInitialURL();
-      setTargetUrl(incomingUrl && isRestorableUrl(incomingUrl) ? normalizeUrl(incomingUrl) : LOGIN_URL);
+      setTargetUrl(
+        incomingUrl && isRestorableUrl(incomingUrl) ? normalizeUrl(incomingUrl) : APP_ENTRY_URL
+      );
     }
 
-    loadInitialUrl().catch(() => setTargetUrl(LOGIN_URL));
+    loadInitialUrl().catch(() => setTargetUrl(APP_ENTRY_URL));
   }, []);
 
   useEffect(() => {
@@ -133,8 +135,14 @@ export default function App() {
     () => `
       (function() {
         const meta = document.querySelector('meta[name=viewport]');
+        const viewport = 'width=1024, initial-scale=' + (window.innerWidth / 1024) + ', maximum-scale=1, viewport-fit=cover';
         if (meta) {
-          meta.setAttribute('content', 'width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover');
+          meta.setAttribute('content', viewport);
+        } else {
+          const newMeta = document.createElement('meta');
+          newMeta.name = 'viewport';
+          newMeta.content = viewport;
+          document.head.appendChild(newMeta);
         }
         document.documentElement.style.webkitUserSelect = 'none';
         document.documentElement.style.webkitTouchCallout = 'none';
@@ -195,6 +203,7 @@ export default function App() {
               androidLayerType="hardware"
               userAgent="Mozilla/5.0 (Linux; Android 13; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36 MelinaStudioApp/0.1"
               injectedJavaScript={injectedJavaScript}
+              injectedJavaScriptBeforeContentLoaded={injectedJavaScript}
               onNavigationStateChange={handleNavigation}
               onLoadStart={() => {
                 setLoading(true);
