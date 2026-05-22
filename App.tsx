@@ -14,7 +14,7 @@ import {
   Text,
   View
 } from "react-native";
-import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { WebView, WebViewNavigation } from "react-native-webview";
 import type { WebView as WebViewType } from "react-native-webview";
 
@@ -39,11 +39,6 @@ const drawerItems = [
     label: "Settings",
     icon: "settings-outline" as const,
     url: `${MELINA_URL.replace(/\/$/, "")}/playground/settings`,
-  },
-  {
-    label: "Login",
-    icon: "log-in-outline" as const,
-    url: `${MELINA_URL.replace(/\/$/, "")}/auth`,
   },
 ];
 
@@ -98,6 +93,15 @@ function isMainMelinaUrl(url: string) {
 }
 
 export default function App() {
+  return (
+    <SafeAreaProvider>
+      <AppContent />
+    </SafeAreaProvider>
+  );
+}
+
+function AppContent() {
+  const insets = useSafeAreaInsets();
   const webViewRef = useRef<WebViewType>(null);
   const drawerTranslateX = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
   const [targetUrl, setTargetUrl] = useState(APP_ENTRY_URL);
@@ -108,6 +112,7 @@ export default function App() {
   const [loadError, setLoadError] = useState("");
   const [refreshing, setRefreshing] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [themeMode, setThemeMode] = useState<"dark" | "light">("dark");
 
   useEffect(() => {
     async function loadInitialUrl() {
@@ -182,6 +187,10 @@ export default function App() {
         }
         document.documentElement.style.webkitUserSelect = 'none';
         document.documentElement.style.webkitTouchCallout = 'none';
+        try {
+          const theme = localStorage.getItem('theme') || (document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+          window.ReactNativeWebView && window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'theme', value: theme }));
+        } catch (error) {}
       })();
       true;
     `,
@@ -207,10 +216,48 @@ export default function App() {
     setTargetUrl(url);
   }, []);
 
+  const toggleTheme = useCallback(() => {
+    const nextTheme = themeMode === "dark" ? "light" : "dark";
+    setThemeMode(nextTheme);
+    setDrawerOpen(false);
+    webViewRef.current?.injectJavaScript(`
+      (function() {
+        const theme = '${nextTheme}';
+        localStorage.setItem('theme', theme);
+        try {
+          const settings = JSON.parse(localStorage.getItem('settings') || '{}');
+          settings.theme = theme;
+          localStorage.setItem('settings', JSON.stringify(settings));
+        } catch (error) {}
+        document.documentElement.classList.toggle('dark', theme === 'dark');
+        document.documentElement.style.colorScheme = theme;
+        window.dispatchEvent(new StorageEvent('storage', { key: 'theme', newValue: theme }));
+      })();
+      true;
+    `);
+  }, [themeMode]);
+
+  const handleLogout = useCallback(() => {
+    setDrawerOpen(false);
+    setHasError(false);
+    setLoadError("");
+    webViewRef.current?.injectJavaScript(`
+      (async function() {
+        try {
+          await fetch('${MELINA_URL.replace(/\/$/, "")}/api/v1/auth/logout', {
+            method: 'POST',
+            credentials: 'include'
+          });
+        } catch (error) {}
+        window.location.href = '${MELINA_URL.replace(/\/$/, "")}/auth';
+      })();
+      true;
+    `);
+  }, []);
+
   const isPlaygroundScreen = currentUrl.includes("/playground");
 
   return (
-    <SafeAreaProvider>
       <SafeAreaView style={styles.root}>
         <StatusBar style="light" backgroundColor="#050505" />
 
@@ -287,6 +334,16 @@ export default function App() {
                 Linking.openURL(request.url).catch(() => undefined);
                 return false;
               }}
+              onMessage={(event) => {
+                try {
+                  const message = JSON.parse(event.nativeEvent.data);
+                  if (message.type === "theme" && (message.value === "dark" || message.value === "light")) {
+                    setThemeMode(message.value);
+                  }
+                } catch {
+                  // Ignore non-JSON messages from the webpage.
+                }
+              }}
             />
 
             {(loading || refreshing) && (
@@ -299,7 +356,7 @@ export default function App() {
               <>
                 <Pressable
                   accessibilityLabel="Open menu"
-                  style={styles.menuButton}
+                  style={[styles.menuButton, { top: Math.max(insets.top + 10, 18) }]}
                   onPress={() => setDrawerOpen(true)}
                 >
                   <Ionicons name="menu" size={24} color="#ffffff" />
@@ -311,6 +368,7 @@ export default function App() {
                   style={[
                     styles.drawer,
                     {
+                      paddingTop: Math.max(insets.top + 16, 24),
                       transform: [{ translateX: drawerTranslateX }],
                     },
                   ]}
@@ -348,6 +406,22 @@ export default function App() {
                         </Pressable>
                       );
                     })}
+
+                    <Pressable style={styles.drawerItem} onPress={toggleTheme}>
+                      <Ionicons
+                        name={themeMode === "dark" ? "sunny-outline" : "moon-outline"}
+                        size={20}
+                        color="rgba(255,255,255,0.72)"
+                      />
+                      <Text style={styles.drawerItemText}>
+                        {themeMode === "dark" ? "Light mode" : "Dark mode"}
+                      </Text>
+                    </Pressable>
+
+                    <Pressable style={styles.drawerItem} onPress={handleLogout}>
+                      <Ionicons name="log-out-outline" size={20} color="rgba(255,255,255,0.72)" />
+                      <Text style={styles.drawerItemText}>Logout</Text>
+                    </Pressable>
                   </View>
                 </Animated.View>
               </>
@@ -355,7 +429,6 @@ export default function App() {
           </>
         )}
       </SafeAreaView>
-    </SafeAreaProvider>
   );
 }
 
