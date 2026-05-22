@@ -1,5 +1,4 @@
 import { Ionicons } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
 import * as Linking from "expo-linking";
 import * as SplashScreen from "expo-splash-screen";
@@ -25,12 +24,12 @@ const MELINA_URL =
   (Constants.expoConfig?.extra?.appUrl as string | undefined) ||
   "https://melina.studio";
 
-const LAST_URL_KEY = "melina:last-url";
+const LOGIN_URL = `${MELINA_URL.replace(/\/$/, "")}/auth`;
 const MELINA_HOSTS = new Set(["melina.studio", "www.melina.studio"]);
 
 function normalizeUrl(url: string) {
   if (url.startsWith("exp://") || url.startsWith("exps://")) {
-    return MELINA_URL;
+    return LOGIN_URL;
   }
 
   if (url.startsWith("melina://")) {
@@ -80,8 +79,7 @@ function isMainMelinaUrl(url: string) {
 
 export default function App() {
   const webViewRef = useRef<WebViewType>(null);
-  const [targetUrl, setTargetUrl] = useState(MELINA_URL);
-  const [currentUrl, setCurrentUrl] = useState(MELINA_URL);
+  const [targetUrl, setTargetUrl] = useState(LOGIN_URL);
   const [canGoBack, setCanGoBack] = useState(false);
   const [loading, setLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
@@ -89,14 +87,12 @@ export default function App() {
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
-    async function restoreLastUrl() {
+    async function loadInitialUrl() {
       const incomingUrl = await Linking.getInitialURL();
-      const savedUrl = await AsyncStorage.getItem(LAST_URL_KEY);
-      const restorableUrl = isRestorableUrl(incomingUrl) ? incomingUrl : savedUrl;
-      setTargetUrl(normalizeUrl(restorableUrl || MELINA_URL));
+      setTargetUrl(incomingUrl && isRestorableUrl(incomingUrl) ? normalizeUrl(incomingUrl) : LOGIN_URL);
     }
 
-    restoreLastUrl().catch(() => setTargetUrl(MELINA_URL));
+    loadInitialUrl().catch(() => setTargetUrl(LOGIN_URL));
   }, []);
 
   useEffect(() => {
@@ -150,11 +146,6 @@ export default function App() {
 
   const handleNavigation = useCallback((navState: WebViewNavigation) => {
     setCanGoBack(navState.canGoBack);
-    setCurrentUrl(navState.url);
-
-    if (navState.url.startsWith(MELINA_URL)) {
-      AsyncStorage.setItem(LAST_URL_KEY, navState.url).catch(() => undefined);
-    }
   }, []);
 
   const handleReload = useCallback(() => {
@@ -162,12 +153,6 @@ export default function App() {
     setLoadError("");
     setRefreshing(true);
     webViewRef.current?.reload();
-  }, []);
-
-  const handleHome = useCallback(() => {
-    setHasError(false);
-    setLoadError("");
-    setTargetUrl(MELINA_URL);
   }, []);
 
   return (
@@ -254,30 +239,6 @@ export default function App() {
                 <ActivityIndicator color="#ffffff" />
               </View>
             )}
-
-            <View style={styles.nativeBar}>
-              <Pressable
-                accessibilityLabel="Back"
-                disabled={!canGoBack}
-                style={[styles.iconButton, !canGoBack && styles.iconButtonDisabled]}
-                onPress={() => webViewRef.current?.goBack()}
-              >
-                <Ionicons name="chevron-back" size={20} color="#ffffff" />
-              </Pressable>
-              <Text numberOfLines={1} style={styles.urlText}>
-                {currentUrl.replace(/^https?:\/\//, "")}
-              </Text>
-              <Pressable accessibilityLabel="Home" style={styles.iconButton} onPress={handleHome}>
-                <Ionicons name="home-outline" size={18} color="#ffffff" />
-              </Pressable>
-              <Pressable
-                accessibilityLabel="Reload"
-                style={styles.iconButton}
-                onPress={handleReload}
-              >
-                <Ionicons name="refresh" size={18} color="#ffffff" />
-              </Pressable>
-            </View>
           </>
         )}
       </SafeAreaView>
@@ -299,31 +260,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "rgba(5,5,5,0.45)",
     justifyContent: "center"
-  },
-  nativeBar: {
-    alignItems: "center",
-    backgroundColor: "#050505",
-    borderTopColor: "rgba(255,255,255,0.08)",
-    borderTopWidth: StyleSheet.hairlineWidth,
-    flexDirection: "row",
-    gap: 8,
-    minHeight: 48,
-    paddingHorizontal: 10
-  },
-  iconButton: {
-    alignItems: "center",
-    borderRadius: 8,
-    height: 36,
-    justifyContent: "center",
-    width: 36
-  },
-  iconButtonDisabled: {
-    opacity: 0.35
-  },
-  urlText: {
-    color: "rgba(255,255,255,0.68)",
-    flex: 1,
-    fontSize: 12
   },
   errorScreen: {
     alignItems: "center",
