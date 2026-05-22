@@ -362,8 +362,47 @@ function AppContent() {
                   pointerEvents="none"
                   style={[styles.workspaceBrand, { top: Math.max(insets.top + 10, 18) }]}
                 >
-                  <Text style={styles.workspaceTitle}>Melina Studios</Text>
-                  <Text style={styles.workspaceSubtitle}>A cursor for canvas</Text>
+                  <View style={styles.workspaceBrandRow}>
+                    <View
+                      style={[
+                        styles.workspaceBrandLogo,
+                        themeMode === "light" && styles.workspaceBrandLogoLight,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.workspaceBrandLogoText,
+                          themeMode === "light" && styles.workspaceBrandLogoTextLight,
+                        ]}
+                      >
+                        M
+                      </Text>
+                    </View>
+                    <Text
+                      style={[
+                        styles.workspaceBrandName,
+                        themeMode === "light" && styles.workspaceBrandNameLight,
+                      ]}
+                    >
+                      Melina Studios
+                    </Text>
+                  </View>
+                  <Text
+                    style={[
+                      styles.workspaceTitle,
+                      themeMode === "light" && styles.workspaceTitleLight,
+                    ]}
+                  >
+                    Cursor for Canvas
+                  </Text>
+                  <Text
+                    style={[
+                      styles.workspaceSubtitle,
+                      themeMode === "light" && styles.workspaceSubtitleLight,
+                    ]}
+                  >
+                    Describe your intent. Melina handles the canvas.
+                  </Text>
                 </View>
 
                 <Pressable
@@ -477,23 +516,66 @@ const styles = StyleSheet.create({
   },
   workspaceBrand: {
     alignItems: "center",
-    left: 74,
+    left: 64,
     position: "absolute",
-    right: 74,
+    right: 20,
     zIndex: 19
   },
-  workspaceTitle: {
+  workspaceBrandRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 8,
+    justifyContent: "center",
+    marginBottom: 6
+  },
+  workspaceBrandLogo: {
+    alignItems: "center",
+    backgroundColor: "#ffffff",
+    borderRadius: 8,
+    height: 28,
+    justifyContent: "center",
+    width: 28
+  },
+  workspaceBrandLogoLight: {
+    backgroundColor: "#111111"
+  },
+  workspaceBrandLogoText: {
+    color: "#050505",
+    fontSize: 18,
+    fontWeight: "800"
+  },
+  workspaceBrandLogoTextLight: {
+    color: "#ffffff"
+  },
+  workspaceBrandName: {
     color: "#ffffff",
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: "800",
     textAlign: "center"
   },
-  workspaceSubtitle: {
-    color: "rgba(255,255,255,0.62)",
-    fontSize: 11,
-    fontWeight: "600",
-    marginTop: 1,
+  workspaceBrandNameLight: {
+    color: "#111111"
+  },
+  workspaceTitle: {
+    color: "#ffffff",
+    fontSize: 30,
+    fontWeight: "800",
+    lineHeight: 34,
     textAlign: "center"
+  },
+  workspaceTitleLight: {
+    color: "#050505"
+  },
+  workspaceSubtitle: {
+    color: "rgba(255,255,255,0.72)",
+    fontSize: 13,
+    fontWeight: "600",
+    lineHeight: 18,
+    marginTop: 5,
+    textAlign: "center"
+  },
+  workspaceSubtitleLight: {
+    color: "rgba(0,0,0,0.56)"
   },
   menuButton: {
     alignItems: "center",
