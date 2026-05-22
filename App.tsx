@@ -255,6 +255,10 @@ function AppContent() {
     `);
   }, []);
 
+  const openExternalLink = useCallback((url: string) => {
+    Linking.openURL(url).catch(() => undefined);
+  }, []);
+
   const isPlaygroundScreen = currentUrl.includes("/playground");
 
   return (
@@ -354,6 +358,14 @@ function AppContent() {
 
             {isPlaygroundScreen && (
               <>
+                <View
+                  pointerEvents="none"
+                  style={[styles.workspaceBrand, { top: Math.max(insets.top + 10, 18) }]}
+                >
+                  <Text style={styles.workspaceTitle}>Melina Studios</Text>
+                  <Text style={styles.workspaceSubtitle}>A cursor for canvas</Text>
+                </View>
+
                 <Pressable
                   accessibilityLabel="Open menu"
                   style={[styles.menuButton, { top: Math.max(insets.top + 10, 18) }]}
@@ -424,6 +436,22 @@ function AppContent() {
                     </Pressable>
                   </View>
                 </Animated.View>
+
+                <View
+                  style={[
+                    styles.creditBar,
+                    { bottom: Math.max(insets.bottom + 8, 12) },
+                  ]}
+                >
+                  <Text style={styles.creditText}>cooked by </Text>
+                  <Pressable onPress={() => openExternalLink("https://oishikbiswas.vercel.app/")}>
+                    <Text style={styles.creditLink}>Oishik Biswas</Text>
+                  </Pressable>
+                  <Text style={styles.creditText}> | Owner of melina studios </Text>
+                  <Pressable onPress={() => openExternalLink("https://aryan-shaw.netlify.app/")}>
+                    <Text style={styles.creditLink}>Aryan Shaw</Text>
+                  </Pressable>
+                </View>
               </>
             )}
           </>
@@ -447,6 +475,26 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(5,5,5,0.45)",
     justifyContent: "center"
   },
+  workspaceBrand: {
+    alignItems: "center",
+    left: 74,
+    position: "absolute",
+    right: 74,
+    zIndex: 19
+  },
+  workspaceTitle: {
+    color: "#ffffff",
+    fontSize: 17,
+    fontWeight: "800",
+    textAlign: "center"
+  },
+  workspaceSubtitle: {
+    color: "rgba(255,255,255,0.62)",
+    fontSize: 11,
+    fontWeight: "600",
+    marginTop: 1,
+    textAlign: "center"
+  },
   menuButton: {
     alignItems: "center",
     backgroundColor: "rgba(5,5,5,0.82)",
@@ -460,6 +508,35 @@ const styles = StyleSheet.create({
     top: 14,
     width: 44,
     zIndex: 20
+  },
+  creditBar: {
+    alignItems: "center",
+    alignSelf: "center",
+    backgroundColor: "rgba(5,5,5,0.78)",
+    borderColor: "rgba(255,255,255,0.1)",
+    borderRadius: 999,
+    borderWidth: 1,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    maxWidth: "92%",
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    position: "absolute",
+    zIndex: 18
+  },
+  creditText: {
+    color: "rgba(255,255,255,0.6)",
+    fontSize: 10,
+    fontWeight: "600",
+    lineHeight: 14
+  },
+  creditLink: {
+    color: "#ffffff",
+    fontSize: 10,
+    fontWeight: "800",
+    lineHeight: 14,
+    textDecorationLine: "underline"
   },
   drawerBackdrop: {
     ...StyleSheet.absoluteFillObject,
