@@ -175,6 +175,9 @@ function AppContent() {
   const injectedJavaScript = useMemo(
     () => `
       (function() {
+        if (window.__melinaAppChromeInstalled) return true;
+        window.__melinaAppChromeInstalled = true;
+
         const meta = document.querySelector('meta[name=viewport]');
         const viewport = 'width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover';
         if (meta) {
@@ -187,6 +190,209 @@ function AppContent() {
         }
         document.documentElement.style.webkitUserSelect = 'none';
         document.documentElement.style.webkitTouchCallout = 'none';
+
+        const style = document.createElement('style');
+        style.id = 'melina-app-chrome-style';
+        style.textContent = \`
+          #melina-app-top,
+          #melina-app-credit {
+            box-sizing: border-box;
+            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+          }
+
+          #melina-app-top {
+            display: none;
+            width: 100%;
+            padding: calc(env(safe-area-inset-top, 0px) + 14px) 16px 18px;
+            background: color-mix(in srgb, Canvas 92%, transparent);
+            border-bottom: 1px solid color-mix(in srgb, CanvasText 10%, transparent);
+          }
+
+          .dark #melina-app-top {
+            background: rgba(5, 5, 5, 0.94);
+          }
+
+          #melina-app-top[data-visible="true"] {
+            display: block;
+          }
+
+          #melina-app-top-inner {
+            display: grid;
+            grid-template-columns: 44px 1fr 44px;
+            align-items: start;
+            gap: 8px;
+            width: 100%;
+          }
+
+          #melina-app-menu {
+            width: 44px;
+            height: 44px;
+            border: 1px solid color-mix(in srgb, CanvasText 14%, transparent);
+            border-radius: 12px;
+            background: color-mix(in srgb, CanvasText 8%, transparent);
+            color: CanvasText;
+            font-size: 25px;
+            font-weight: 800;
+            line-height: 1;
+          }
+
+          #melina-app-brand {
+            min-width: 0;
+            text-align: center;
+          }
+
+          #melina-app-brand-row {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 7px;
+          }
+
+          #melina-app-logo {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            background: CanvasText;
+            color: Canvas;
+            font-size: 18px;
+            font-weight: 900;
+          }
+
+          #melina-app-name {
+            color: CanvasText;
+            font-size: 18px;
+            font-weight: 800;
+            white-space: nowrap;
+          }
+
+          #melina-app-headline {
+            color: CanvasText;
+            font-size: clamp(28px, 8vw, 42px);
+            font-weight: 900;
+            line-height: 1.05;
+            letter-spacing: 0;
+            margin: 0;
+          }
+
+          #melina-app-subtitle {
+            color: color-mix(in srgb, CanvasText 62%, transparent);
+            font-size: 13px;
+            font-weight: 600;
+            line-height: 1.4;
+            margin-top: 7px;
+          }
+
+          #melina-app-credit {
+            display: none;
+            width: 100%;
+            padding: 12px 16px calc(env(safe-area-inset-bottom, 0px) + 12px);
+            color: color-mix(in srgb, CanvasText 66%, transparent);
+            background: color-mix(in srgb, Canvas 92%, transparent);
+            border-top: 1px solid color-mix(in srgb, CanvasText 10%, transparent);
+            font-size: 11px;
+            font-weight: 650;
+            line-height: 1.45;
+            text-align: center;
+          }
+
+          .dark #melina-app-credit {
+            background: rgba(5, 5, 5, 0.94);
+          }
+
+          #melina-app-credit[data-visible="true"] {
+            display: block;
+          }
+
+          .melina-app-credit-link {
+            border: 0;
+            padding: 0;
+            background: transparent;
+            color: CanvasText;
+            font: inherit;
+            font-weight: 850;
+            text-decoration: underline;
+          }
+        \`;
+        document.head.appendChild(style);
+
+        const top = document.createElement('div');
+        top.id = 'melina-app-top';
+        top.innerHTML = \`
+          <div id="melina-app-top-inner">
+            <button id="melina-app-menu" type="button" aria-label="Open menu">☰</button>
+            <div id="melina-app-brand">
+              <div id="melina-app-brand-row">
+                <span id="melina-app-logo">M</span>
+                <span id="melina-app-name">Melina Studios</span>
+              </div>
+              <h1 id="melina-app-headline">Cursor for Canvas</h1>
+              <div id="melina-app-subtitle">Describe your intent. Melina handles the canvas.</div>
+            </div>
+            <span aria-hidden="true"></span>
+          </div>
+        \`;
+
+        const credit = document.createElement('div');
+        credit.id = 'melina-app-credit';
+        credit.innerHTML = \`
+          cooked by <button class="melina-app-credit-link" data-url="https://oishikbiswas.vercel.app/" type="button">Oishik Biswas</button>
+          <span> | Owner of melina studios </span>
+          <button class="melina-app-credit-link" data-url="https://aryan-shaw.netlify.app/" type="button">Aryan Shaw</button>
+        \`;
+
+        function syncChromeVisibility() {
+          const visible = window.location.pathname.indexOf('/playground') === 0;
+          top.dataset.visible = String(visible);
+          credit.dataset.visible = String(visible);
+        }
+
+        function mountChrome() {
+          if (!document.body.contains(top)) {
+            document.body.insertBefore(top, document.body.firstChild);
+          }
+          if (!document.body.contains(credit)) {
+            document.body.appendChild(credit);
+          }
+          syncChromeVisibility();
+        }
+
+        function postMessage(message) {
+          window.ReactNativeWebView && window.ReactNativeWebView.postMessage(JSON.stringify(message));
+        }
+
+        top.querySelector('#melina-app-menu').addEventListener('click', function() {
+          postMessage({ type: 'openDrawer' });
+        });
+
+        credit.querySelectorAll('[data-url]').forEach(function(button) {
+          button.addEventListener('click', function() {
+            postMessage({ type: 'openExternal', url: button.getAttribute('data-url') });
+          });
+        });
+
+        const pushState = history.pushState;
+        history.pushState = function() {
+          pushState.apply(history, arguments);
+          setTimeout(syncChromeVisibility, 0);
+        };
+        const replaceState = history.replaceState;
+        history.replaceState = function() {
+          replaceState.apply(history, arguments);
+          setTimeout(syncChromeVisibility, 0);
+        };
+        window.addEventListener('popstate', syncChromeVisibility);
+        window.addEventListener('hashchange', syncChromeVisibility);
+
+        if (document.body) {
+          mountChrome();
+        } else {
+          document.addEventListener('DOMContentLoaded', mountChrome, { once: true });
+        }
+
         try {
           const theme = localStorage.getItem('theme') || (document.documentElement.classList.contains('dark') ? 'dark' : 'light');
           window.ReactNativeWebView && window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'theme', value: theme }));
@@ -253,10 +459,6 @@ function AppContent() {
       })();
       true;
     `);
-  }, []);
-
-  const openExternalLink = useCallback((url: string) => {
-    Linking.openURL(url).catch(() => undefined);
   }, []);
 
   const isPlaygroundScreen = currentUrl.includes("/playground");
@@ -344,6 +546,12 @@ function AppContent() {
                   if (message.type === "theme" && (message.value === "dark" || message.value === "light")) {
                     setThemeMode(message.value);
                   }
+                  if (message.type === "openDrawer") {
+                    setDrawerOpen(true);
+                  }
+                  if (message.type === "openExternal" && typeof message.url === "string") {
+                    Linking.openURL(message.url).catch(() => undefined);
+                  }
                 } catch {
                   // Ignore non-JSON messages from the webpage.
                 }
@@ -358,61 +566,6 @@ function AppContent() {
 
             {isPlaygroundScreen && (
               <>
-                <View
-                  pointerEvents="none"
-                  style={[styles.workspaceBrand, { top: Math.max(insets.top + 10, 18) }]}
-                >
-                  <View style={styles.workspaceBrandRow}>
-                    <View
-                      style={[
-                        styles.workspaceBrandLogo,
-                        themeMode === "light" && styles.workspaceBrandLogoLight,
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.workspaceBrandLogoText,
-                          themeMode === "light" && styles.workspaceBrandLogoTextLight,
-                        ]}
-                      >
-                        M
-                      </Text>
-                    </View>
-                    <Text
-                      style={[
-                        styles.workspaceBrandName,
-                        themeMode === "light" && styles.workspaceBrandNameLight,
-                      ]}
-                    >
-                      Melina Studios
-                    </Text>
-                  </View>
-                  <Text
-                    style={[
-                      styles.workspaceTitle,
-                      themeMode === "light" && styles.workspaceTitleLight,
-                    ]}
-                  >
-                    Cursor for Canvas
-                  </Text>
-                  <Text
-                    style={[
-                      styles.workspaceSubtitle,
-                      themeMode === "light" && styles.workspaceSubtitleLight,
-                    ]}
-                  >
-                    Describe your intent. Melina handles the canvas.
-                  </Text>
-                </View>
-
-                <Pressable
-                  accessibilityLabel="Open menu"
-                  style={[styles.menuButton, { top: Math.max(insets.top + 10, 18) }]}
-                  onPress={() => setDrawerOpen(true)}
-                >
-                  <Ionicons name="menu" size={24} color="#ffffff" />
-                </Pressable>
-
                 {drawerOpen && <Pressable style={styles.drawerBackdrop} onPress={() => setDrawerOpen(false)} />}
 
                 <Animated.View
@@ -475,22 +628,6 @@ function AppContent() {
                     </Pressable>
                   </View>
                 </Animated.View>
-
-                <View
-                  style={[
-                    styles.creditBar,
-                    { bottom: Math.max(insets.bottom + 8, 12) },
-                  ]}
-                >
-                  <Text style={styles.creditText}>cooked by </Text>
-                  <Pressable onPress={() => openExternalLink("https://oishikbiswas.vercel.app/")}>
-                    <Text style={styles.creditLink}>Oishik Biswas</Text>
-                  </Pressable>
-                  <Text style={styles.creditText}> | Owner of melina studios </Text>
-                  <Pressable onPress={() => openExternalLink("https://aryan-shaw.netlify.app/")}>
-                    <Text style={styles.creditLink}>Aryan Shaw</Text>
-                  </Pressable>
-                </View>
               </>
             )}
           </>
@@ -513,112 +650,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "rgba(5,5,5,0.45)",
     justifyContent: "center"
-  },
-  workspaceBrand: {
-    alignItems: "center",
-    left: 64,
-    position: "absolute",
-    right: 20,
-    zIndex: 19
-  },
-  workspaceBrandRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 8,
-    justifyContent: "center",
-    marginBottom: 6
-  },
-  workspaceBrandLogo: {
-    alignItems: "center",
-    backgroundColor: "#ffffff",
-    borderRadius: 8,
-    height: 28,
-    justifyContent: "center",
-    width: 28
-  },
-  workspaceBrandLogoLight: {
-    backgroundColor: "#111111"
-  },
-  workspaceBrandLogoText: {
-    color: "#050505",
-    fontSize: 18,
-    fontWeight: "800"
-  },
-  workspaceBrandLogoTextLight: {
-    color: "#ffffff"
-  },
-  workspaceBrandName: {
-    color: "#ffffff",
-    fontSize: 18,
-    fontWeight: "800",
-    textAlign: "center"
-  },
-  workspaceBrandNameLight: {
-    color: "#111111"
-  },
-  workspaceTitle: {
-    color: "#ffffff",
-    fontSize: 30,
-    fontWeight: "800",
-    lineHeight: 34,
-    textAlign: "center"
-  },
-  workspaceTitleLight: {
-    color: "#050505"
-  },
-  workspaceSubtitle: {
-    color: "rgba(255,255,255,0.72)",
-    fontSize: 13,
-    fontWeight: "600",
-    lineHeight: 18,
-    marginTop: 5,
-    textAlign: "center"
-  },
-  workspaceSubtitleLight: {
-    color: "rgba(0,0,0,0.56)"
-  },
-  menuButton: {
-    alignItems: "center",
-    backgroundColor: "rgba(5,5,5,0.82)",
-    borderColor: "rgba(255,255,255,0.12)",
-    borderRadius: 12,
-    borderWidth: 1,
-    height: 44,
-    justifyContent: "center",
-    left: 14,
-    position: "absolute",
-    top: 14,
-    width: 44,
-    zIndex: 20
-  },
-  creditBar: {
-    alignItems: "center",
-    alignSelf: "center",
-    backgroundColor: "rgba(5,5,5,0.78)",
-    borderColor: "rgba(255,255,255,0.1)",
-    borderRadius: 999,
-    borderWidth: 1,
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "center",
-    maxWidth: "92%",
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    position: "absolute",
-    zIndex: 18
-  },
-  creditText: {
-    color: "rgba(255,255,255,0.6)",
-    fontSize: 10,
-    fontWeight: "600",
-    lineHeight: 14
-  },
-  creditLink: {
-    color: "#ffffff",
-    fontSize: 10,
-    fontWeight: "800",
-    lineHeight: 14,
-    textDecorationLine: "underline"
   },
   drawerBackdrop: {
     ...StyleSheet.absoluteFillObject,
