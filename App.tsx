@@ -289,6 +289,7 @@ function AppContent() {
           #melina-app-credit {
             display: none;
             width: 100%;
+            margin-top: 70vh;
             padding: 12px 16px calc(env(safe-area-inset-bottom, 0px) + 12px);
             color: color-mix(in srgb, CanvasText 66%, transparent);
             background: color-mix(in srgb, Canvas 92%, transparent);
@@ -429,7 +430,7 @@ function AppContent() {
             '#melina-app-name{color:CanvasText;font-size:18px;font-weight:800;white-space:nowrap}',
             '#melina-app-headline{color:CanvasText;font-size:clamp(28px,8vw,42px);font-weight:900;line-height:1.05;letter-spacing:0;margin:0}',
             '#melina-app-subtitle{color:color-mix(in srgb,CanvasText 62%,transparent);font-size:13px;font-weight:600;line-height:1.4;margin-top:7px}',
-            '#melina-app-credit{display:none;width:100%;padding:12px 16px calc(env(safe-area-inset-bottom,0px) + 12px);color:color-mix(in srgb,CanvasText 66%,transparent);background:color-mix(in srgb,Canvas 92%,transparent);border-top:1px solid color-mix(in srgb,CanvasText 10%,transparent);font-size:11px;font-weight:650;line-height:1.45;text-align:center}',
+            '#melina-app-credit{display:none;width:100%;margin-top:70vh;padding:12px 16px calc(env(safe-area-inset-bottom,0px) + 12px);color:color-mix(in srgb,CanvasText 66%,transparent);background:color-mix(in srgb,Canvas 92%,transparent);border-top:1px solid color-mix(in srgb,CanvasText 10%,transparent);font-size:11px;font-weight:650;line-height:1.45;text-align:center}',
             '.dark #melina-app-credit{background:rgba(5,5,5,.94)}',
             '#melina-app-credit[data-visible="true"]{display:block}',
             '.melina-app-credit-link{border:0;padding:0;background:transparent;color:CanvasText;font:inherit;font-weight:850;text-decoration:underline}'
