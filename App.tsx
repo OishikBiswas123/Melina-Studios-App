@@ -403,6 +403,122 @@ function AppContent() {
     []
   );
 
+  const repairChromeJavaScript = useMemo(
+    () => `
+      (function() {
+        function postMessage(message) {
+          window.ReactNativeWebView && window.ReactNativeWebView.postMessage(JSON.stringify(message));
+        }
+
+        function ensureStyle() {
+          if (document.getElementById('melina-app-chrome-style') || !document.head) return;
+          var style = document.createElement('style');
+          style.id = 'melina-app-chrome-style';
+          style.textContent = [
+            '#melina-app-top,#melina-app-credit{box-sizing:border-box;font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}',
+            '#melina-app-top{display:none;width:100%;padding:calc(env(safe-area-inset-top,0px) + 14px) 16px 18px;background:color-mix(in srgb,Canvas 92%,transparent);border-bottom:1px solid color-mix(in srgb,CanvasText 10%,transparent)}',
+            '.dark #melina-app-top{background:rgba(5,5,5,.94)}',
+            '#melina-app-top[data-visible="true"]{display:block}',
+            '#melina-app-top-inner{display:grid;grid-template-columns:44px 1fr 44px;align-items:start;gap:8px;width:100%}',
+            '#melina-app-menu{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border:1px solid color-mix(in srgb,CanvasText 14%,transparent);border-radius:12px;background:color-mix(in srgb,CanvasText 8%,transparent);color:CanvasText}',
+            '#melina-app-menu-bars{display:inline-flex;flex-direction:column;gap:4px;width:18px}',
+            '#melina-app-menu-bars i{display:block;width:18px;height:2px;border-radius:999px;background:currentColor}',
+            '#melina-app-brand{min-width:0;text-align:center}',
+            '#melina-app-brand-row{display:inline-flex;align-items:center;justify-content:center;gap:8px;margin-bottom:7px}',
+            '#melina-app-logo{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:8px;background:CanvasText;color:Canvas;font-size:18px;font-weight:900}',
+            '#melina-app-name{color:CanvasText;font-size:18px;font-weight:800;white-space:nowrap}',
+            '#melina-app-headline{color:CanvasText;font-size:clamp(28px,8vw,42px);font-weight:900;line-height:1.05;letter-spacing:0;margin:0}',
+            '#melina-app-subtitle{color:color-mix(in srgb,CanvasText 62%,transparent);font-size:13px;font-weight:600;line-height:1.4;margin-top:7px}',
+            '#melina-app-credit{display:none;width:100%;padding:12px 16px calc(env(safe-area-inset-bottom,0px) + 12px);color:color-mix(in srgb,CanvasText 66%,transparent);background:color-mix(in srgb,Canvas 92%,transparent);border-top:1px solid color-mix(in srgb,CanvasText 10%,transparent);font-size:11px;font-weight:650;line-height:1.45;text-align:center}',
+            '.dark #melina-app-credit{background:rgba(5,5,5,.94)}',
+            '#melina-app-credit[data-visible="true"]{display:block}',
+            '.melina-app-credit-link{border:0;padding:0;background:transparent;color:CanvasText;font:inherit;font-weight:850;text-decoration:underline}'
+          ].join('');
+          document.head.appendChild(style);
+        }
+
+        function createTop() {
+          var top = document.createElement('div');
+          top.id = 'melina-app-top';
+          top.innerHTML =
+            '<div id="melina-app-top-inner">' +
+            '<button id="melina-app-menu" type="button" aria-label="Open menu"><span id="melina-app-menu-bars" aria-hidden="true"><i></i><i></i><i></i></span></button>' +
+            '<div id="melina-app-brand"><div id="melina-app-brand-row"><span id="melina-app-logo">M</span><span id="melina-app-name">Melina Studios</span></div><h1 id="melina-app-headline">Cursor for Canvas</h1><div id="melina-app-subtitle">Describe your intent. Melina handles the canvas.</div></div>' +
+            '<span aria-hidden="true"></span>' +
+            '</div>';
+          return top;
+        }
+
+        function createCredit() {
+          var credit = document.createElement('div');
+          credit.id = 'melina-app-credit';
+          credit.innerHTML =
+            'cooked by <button class="melina-app-credit-link" data-url="https://oishikbiswas.vercel.app/" type="button">Oishik Biswas</button>' +
+            '<span> | Owner of melina studios </span>' +
+            '<button class="melina-app-credit-link" data-url="https://aryan-shaw.netlify.app/" type="button">Aryan Shaw</button>';
+          return credit;
+        }
+
+        function bindEvents() {
+          var menu = document.getElementById('melina-app-menu');
+          if (menu) {
+            menu.onclick = function() {
+              postMessage({ type: 'openDrawer' });
+            };
+          }
+          document.querySelectorAll('#melina-app-credit [data-url]').forEach(function(button) {
+            button.onclick = function() {
+              postMessage({ type: 'openExternal', url: button.getAttribute('data-url') });
+            };
+          });
+        }
+
+        function syncVisibility() {
+          var visible = window.location.pathname.indexOf('/playground') === 0;
+          var top = document.getElementById('melina-app-top');
+          var credit = document.getElementById('melina-app-credit');
+          if (top) top.dataset.visible = String(visible);
+          if (credit) credit.dataset.visible = String(visible);
+        }
+
+        function mount() {
+          if (!document.body) return false;
+          ensureStyle();
+          var top = document.getElementById('melina-app-top') || createTop();
+          var credit = document.getElementById('melina-app-credit') || createCredit();
+          if (!document.body.contains(top)) document.body.insertBefore(top, document.body.firstChild);
+          if (!document.body.contains(credit)) document.body.appendChild(credit);
+          bindEvents();
+          syncVisibility();
+          return true;
+        }
+
+        if (!window.__melinaAppRepairPatched) {
+          window.__melinaAppRepairPatched = true;
+          var pushState = history.pushState;
+          history.pushState = function() {
+            pushState.apply(history, arguments);
+            setTimeout(mount, 0);
+          };
+          var replaceState = history.replaceState;
+          history.replaceState = function() {
+            replaceState.apply(history, arguments);
+            setTimeout(mount, 0);
+          };
+          window.addEventListener('popstate', mount);
+          window.addEventListener('hashchange', mount);
+        }
+
+        mount();
+        setTimeout(mount, 250);
+        setTimeout(mount, 1000);
+        setTimeout(mount, 2500);
+      })();
+      true;
+    `,
+    []
+  );
+
   const handleNavigation = useCallback((navState: WebViewNavigation) => {
     setCanGoBack(navState.canGoBack);
     setCurrentUrl(navState.url);
@@ -518,6 +634,7 @@ function AppContent() {
               onLoadEnd={() => {
                 setLoading(false);
                 setRefreshing(false);
+                webViewRef.current?.injectJavaScript(repairChromeJavaScript);
                 SplashScreen.hideAsync().catch(() => undefined);
               }}
               onError={(event) => {
